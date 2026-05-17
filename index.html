@@ -464,10 +464,18 @@ const LF_SCORE = {
 
 // ── Nav ───────────────────────────────────────────────────────────────────
 function showPage(id) {
+  // Always re-read from localStorage before rendering — fixes iOS standalone
+  // web app mode where in-memory state can be lost between nav taps
+  db  = JSON.parse(localStorage.getItem(STORE)  || '{"entries":[]}');
+  cfg = JSON.parse(localStorage.getItem(CFGKEY) || '{}');
+  if (!cfg.workerUrl)                cfg.workerUrl      = WORKER;
+  if (cfg.notionEnabled === undefined) cfg.notionEnabled = true;
+  if (cfg.driftAlert    === undefined) cfg.driftAlert    = true;
+  if (cfg.lsAlert       === undefined) cfg.lsAlert       = true;
+
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
-  // match nav button by normalised text
   document.querySelectorAll('nav button').forEach(b => {
     if (b.textContent.replace(/[\u2011\-]/g,'-').toLowerCase().trim() === id) b.classList.add('active');
   });
