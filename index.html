@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Check-in">
+<meta name="theme-color" content="#0f0f0d">
+<title>Check-in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:          #0f0f0d;
+  --bg2:         #161614;
+  --bg3:         #1e1e1b;
+  --rule:        rgba(255,255,255,0.07);
+  --rule2:       rgba(255,255,255,0.13);
+  --ink:         #e8e4dc;
+  --ink2:        #9a9690;
+  --ink3:        #5a5650;
+  --accent:      #7eb89a;
+  --accent-dim:  rgba(126,184,154,0.13);
+  --warn:        #c9974a;
+  --warn-dim:    rgba(201,151,74,0.13);
+  --danger:      #c96b6b;
+  --danger-dim:  rgba(201,107,107,0.13);
+  --radius:      8px;
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bot:    env(safe-area-inset-bottom, 0px);
+}
+html { background: var(--bg); }
+body {
+  font-family: 'Crimson Pro', Georgia, serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: calc(var(--safe-top) + 2rem) 1.25rem calc(var(--safe-bot) + 5rem);
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+.wrap { max-width: 540px; margin: 0 auto; position: relative; z-index: 1; }
+
+/* masthead */
+.masthead { margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--rule); }
+.masthead-eyebrow { font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink3); margin-bottom:0.5rem; }
+.masthead h1 { font-size:1.55rem; font-weight:300; letter-spacing:-0.01em; }
+.masthead h1 em { font-style:normal; color:var(--accent); }
+
+/* nav */
+nav { display:flex; margin-bottom:2.5rem; border-bottom:1px solid var(--rule); overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+nav::-webkit-scrollbar { display:none; }
+nav button { background:none; border:none; border-bottom:1.5px solid transparent; padding:8px 16px 10px; margin-bottom:-1px; font-family:'DM Mono',monospace; font-size:0.65rem; letter-spacing:0.1em; color:var(--ink3); cursor:pointer; text-transform:uppercase; white-space:nowrap; transition:color 0.15s; }
+nav button:hover { color:var(--ink2); }
+nav button.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* pages */
+.page { display:none; }
+.page.active { display:block; animation:rise 0.2s ease; }
+@keyframes rise { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
+
+/* eyebrow */
+.eyebrow { font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink3); margin-bottom:1.25rem; }
+
+/* section sep */
+.sep { margin-top:2.5rem; padding-top:2rem; border-top:1px solid var(--rule); }
+
+/* q blocks */
+.q-block { margin-bottom:2rem; }
+.q-text { font-size:1.05rem; font-weight:300; line-height:1.6; margin-bottom:1rem; }
+.scale-row { display:flex; gap:5px; }
+.scale-btn { flex:1; padding:10px 0; background:var(--bg2); border:1px solid var(--rule); border-radius:var(--radius); font-family:'DM Mono',monospace; font-size:0.85rem; color:var(--ink3); cursor:pointer; transition:all 0.12s; }
+.scale-btn:hover { border-color:var(--rule2); color:var(--ink2); }
+.scale-btn.sel { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
+.scale-labels { display:flex; justify-content:space-between; margin-top:5px; font-family:'DM Mono',monospace; font-size:0.57rem; color:var(--ink3); letter-spacing:0.04em; }
+
+/* lifestyle grid */
+.ls-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.ls-card { background:var(--bg2); border:1px solid var(--rule); border-radius:var(--radius); padding:13px; }
+.ls-lbl { font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink3); margin-bottom:10px; }
+.pill-row { display:flex; gap:5px; flex-wrap:wrap; }
+.pill { padding:5px 10px; border:1px solid var(--rule); border-radius:20px; font-family:'DM Mono',monospace; font-size:0.62rem; color:var(--ink3); background:none; cursor:pointer; transition:all 0.12s; letter-spacing:0.03em; }
+.pill:hover { color:var(--ink2); border-color:var(--rule2); }
+.pill.sel-good   { background:rgba(126,184,154,0.15); border-color:var(--accent); color:var(--accent); }
+.pill.sel-warn   { background:rgba(201,151,74,0.15);  border-color:var(--warn);   color:var(--warn); }
+.pill.sel-danger { background:rgba(201,107,107,0.15); border-color:var(--danger); color:var(--danger); }
+
+/* note + submit */
+textarea { width:100%; background:var(--bg2); border:1px solid var(--rule); border-radius:var(--radius); padding:13px 15px; font-family:'Crimson Pro',serif; font-size:1rem; font-weight:300; color:var(--ink); resize:none; min-height:88px; margin-bottom:1.5rem; line-height:1.65; }
+textarea:focus { outline:none; border-color:var(--accent); }
+textarea::placeholder { color:var(--ink3); font-style:italic; }
+.submit-btn { width:100%; padding:14px; background:var(--accent-dim); border:1px solid var(--accent); border-radius:var(--radius); font-family:'DM Mono',monospace; font-size:0.7rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); cursor:pointer; transition:all 0.15s; }
+.submit-btn:hover { background:rgba(126,184,154,0.22); }
+.submit-btn:active { transform:scale(0.99); }
+.submit-btn:disabled { opacity:0.35; cursor:not-allowed; transform:none; }
+.status-line { margin-top:10px; font-family:'DM Mono',monospace; font-size:0.62rem; color:var(--ink3); letter-spacing:0.04em; text-align:center; min-height:1em; }
+
+/* success */
+.success { text-align:center; padding:4rem 1rem; }
+.success-mark { font-size:2rem; color:var(--accent); font-family:'Crimson Pro',serif; font-weight:300; font-style:italic; margin-bottom:1.25rem; }
+.success h2 { font-size:1.3rem; font-weight:300; margin-bottom:0.5rem; }
+.success p { font-size:0.95rem; color:var(--ink2); max-width:300px; margin:0 auto 2rem; line-height:1.7; font-weight:300; }
+.ghost-btn { background:none; border:1px solid var(--rule2); border-radius:var(--radius); padding:9px 18px; font-family:'DM Mono',monospace; font-size:0.65rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink2); cursor:pointer; transition:all 0.12s; }
+.ghost-btn:hover { border-color:var(--ink2); color:var(--ink); }
+
+/* alerts */
+.alert { padding:13px 16px; border-radius:var(--radius); margin-bottom:1rem; font-size:0.9rem; line-height:1.65; font-weight:300; border-left:2px solid; }
+.alert-good   { background:var(--accent-dim);       border-color:var(--accent); color:var(--accent); }
+.alert-warn   { background:var(--warn-dim);         border-color:var(--warn);   color:var(--warn); }
+.alert-danger { background:var(--danger-dim);       border-color:var(--danger); color:var(--danger); }
+.alert-muted  { background:var(--bg2); border-color:var(--rule2); color:var(--ink2); }
+
+/* metrics */
+.metric-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:2rem; }
+.metric { background:var(--bg2); border:1px solid var(--rule); border-radius:var(--radius); padding:14px 10px; text-align:center; }
+.metric-val { font-size:1.55rem; font-weight:300; font-family:'Crimson Pro',serif; }
+.metric-val sup { font-size:0.72rem; color:var(--ink3); }
+.metric-lbl { font-family:'DM Mono',monospace; font-size:0.57rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink3); margin-top:4px; }
+
+/* chart */
+.chart-wrap { position:relative; height:180px; margin-bottom:2rem; }
+
+/* history */
+.hist-row { display:flex; justify-content:space-between; align-items:baseline; padding:13px 0; border-bottom:1px solid var(--rule); gap:10px; }
+.hist-date { font-family:'DM Mono',monospace; font-size:0.65rem; color:var(--ink3); white-space:nowrap; }
+.hist-note { font-size:0.88rem; color:var(--ink3); font-style:italic; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0 10px; font-weight:300; }
+.hist-right { display:flex; align-items:center; gap:8px; white-space:nowrap; }
+.hist-score { font-family:'DM Mono',monospace; font-size:0.75rem; font-weight:500; }
+.hist-notion { font-family:'DM Mono',monospace; font-size:0.55rem; color:var(--accent); opacity:0.7; }
+.c-good  { color:var(--accent); }
+.c-warn  { color:var(--warn); }
+.c-bad   { color:var(--danger); }
+
+/* pillars */
+.pillar-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:2rem; }
+.pillar { background:var(--bg2); border:1px solid var(--rule); border-radius:var(--radius); padding:14px; }
+.pillar-name { font-family:'DM Mono',monospace; font-size:0.58rem; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink3); margin-bottom:8px; }
+.bar-bg { height:2px; background:var(--rule2); border-radius:2px; margin-bottom:7px; }
+.bar-fg { height:2px; border-radius:2px; transition:width 0.6s ease; }
+.pillar-label { font-family:'DM Mono',monospace; font-size:0.58rem; color:var(--ink3); }
+
+/* settings */
+.setting-row { display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid var(--rule); gap:14px; }
+.setting-info { flex:1; }
+.setting-lbl { font-size:0.95rem; font-weight:300; margin-bottom:3px; }
+.setting-sub { font-family:'DM Mono',monospace; font-size:0.58rem; color:var(--ink3); letter-spacing:0.04em; line-height:1.5; }
+.toggle { position:relative; width:40px; height:22px; flex-shrink:0; }
+.toggle input { opacity:0; width:0; height:0; }
+.tog-sl { position:absolute; inset:0; background:var(--bg3); border-radius:11px; cursor:pointer; transition:background 0.2s; border:1px solid var(--rule2); }
+.tog-sl::before { content:''; position:absolute; width:14px; height:14px; left:3px; top:3px; background:var(--ink3); border-radius:50%; transition:left 0.2s, background 0.2s; }
+.toggle input:checked + .tog-sl { background:var(--accent-dim); border-color:var(--accent); }
+.toggle input:checked + .tog-sl::before { left:21px; background:var(--accent); }
+.url-input { width:100%; margin-top:8px; padding:9px 12px; background:var(--bg3); border:1px solid var(--rule); border-radius:var(--radius); font-family:'DM Mono',monospace; font-size:0.63rem; color:var(--ink); }
+.url-input:focus { outline:none; border-color:var(--accent); }
+.notice { font-family:'DM Mono',monospace; font-size:0.58rem; color:var(--ink3); line-height:2; letter-spacing:0.03em; margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--rule); }
+.empty { text-align:center; padding:5rem 1rem; font-family:'DM Mono',monospace; font-size:0.62rem; color:var(--ink3); letter-spacing:0.07em; line-height:2.5; text-transform:uppercase; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="masthead-eyebrow">Personal Brain</div>
+    <h1>Monthly <em>check‑in</em></h1>
+  </div>
+
+  <nav>
+    <button class="active" onclick="showPage('checkin')">Check‑in</button>
+    <button onclick="showPage('trends')">Trends</button>
+    <button onclick="showPage('pillars')">Pillars</button>
+    <button onclick="showPage('settings')">Settings</button>
+  </nav>
+
+  <!-- ══ CHECK-IN ══════════════════════════════════════════════ -->
+  <div id="page-checkin" class="page active">
+    <div id="form-wrap">
+
+      <p class="eyebrow" id="ci-date"></p>
+
+      <!-- Clinical (past 2 weeks) -->
+      <p class="eyebrow" style="color:var(--ink2);margin-bottom:1.5rem;">Past two weeks</p>
+
+      <div class="q-block">
+        <p class="q-text">Little interest or pleasure in doing things?</p>
+        <div class="scale-row" id="q1"></div>
+        <div class="scale-labels"><span>Not at all</span><span>Nearly every day</span></div>
+      </div>
+      <div class="q-block">
+        <p class="q-text">Feeling down, depressed, or hopeless?</p>
+        <div class="scale-row" id="q2"></div>
+        <div class="scale-labels"><span>Not at all</span><span>Nearly every day</span></div>
+      </div>
+      <div class="q-block">
+        <p class="q-text">Feeling nervous, anxious, or on edge?</p>
+        <div class="scale-row" id="q3"></div>
+        <div class="scale-labels"><span>Not at all</span><span>Nearly every day</span></div>
+      </div>
+      <div class="q-block">
+        <p class="q-text">Unable to stop or control worrying?</p>
+        <div class="scale-row" id="q4"></div>
+        <div class="scale-labels"><span>Not at all</span><span>Nearly every day</span></div>
+      </div>
+
+      <!-- Lifestyle (past 7 days) -->
+      <div class="sep">
+        <p class="eyebrow" style="color:var(--ink2);margin-bottom:1.5rem;">Past 7 days</p>
+        <div class="ls-grid">
+
+          <div class="ls-card">
+            <div class="ls-lbl">Cardio workouts</div>
+            <div class="pill-row" id="lf-cardio">
+              <button class="pill" data-val="None"   data-col="danger">None</button>
+              <button class="pill" data-val="1-2x"   data-col="warn">1–2×</button>
+              <button class="pill" data-val="3+"     data-col="good">3+</button>
+            </div>
+          </div>
+
+          <div class="ls-card">
+            <div class="ls-lbl">Strength workouts</div>
+            <div class="pill-row" id="lf-strength">
+              <button class="pill" data-val="None"   data-col="danger">None</button>
+              <button class="pill" data-val="1-2x"   data-col="warn">1–2×</button>
+              <button class="pill" data-val="3+"     data-col="good">3+</button>
+            </div>
+          </div>
+
+          <div class="ls-card">
+            <div class="ls-lbl">Daily walks</div>
+            <div class="pill-row" id="lf-walks">
+              <button class="pill" data-val="Rarely"    data-col="danger">Rarely</button>
+              <button class="pill" data-val="Sometimes" data-col="warn">Sometimes</button>
+              <button class="pill" data-val="Most days" data-col="good">Most days</button>
+            </div>
+          </div>
+
+          <div class="ls-card">
+            <div class="ls-lbl">Sleep quality</div>
+            <div class="pill-row" id="lf-sleep">
+              <button class="pill" data-val="Poor"  data-col="danger">Poor</button>
+              <button class="pill" data-val="Mixed" data-col="warn">Mixed</button>
+              <button class="pill" data-val="Good"  data-col="good">Good</button>
+            </div>
+          </div>
+
+          <div class="ls-card">
+            <div class="ls-lbl">Connection</div>
+            <div class="pill-row" id="lf-connection">
+              <button class="pill" data-val="Low"  data-col="danger">Low</button>
+              <button class="pill" data-val="Some" data-col="warn">Some</button>
+              <button class="pill" data-val="Good" data-col="good">Good</button>
+            </div>
+          </div>
+
+          <div class="ls-card">
+            <div class="ls-lbl">Escapism use</div>
+            <div class="pill-row" id="lf-escapism">
+              <button class="pill" data-val="Heavy" data-col="danger">Heavy</button>
+              <button class="pill" data-val="Some"  data-col="warn">Some</button>
+              <button class="pill" data-val="None"  data-col="good">None</button>
+            </div>
+          </div>
+
+          <div class="ls-card">
+            <div class="ls-lbl">Work stress</div>
+            <div class="pill-row" id="lf-work">
+              <button class="pill" data-val="High"     data-col="danger">High</button>
+              <button class="pill" data-val="Elevated" data-col="warn">Elevated</button>
+              <button class="pill" data-val="Managed"  data-col="good">Managed</button>
+            </div>
+          </div>
+
+          <div class="ls-card">
+            <div class="ls-lbl">Non-work stress</div>
+            <div class="pill-row" id="lf-nonwork">
+              <button class="pill" data-val="High"     data-col="danger">High</button>
+              <button class="pill" data-val="Elevated" data-col="warn">Elevated</button>
+              <button class="pill" data-val="Managed"  data-col="good">Managed</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Full-width panic card -->
+        <div class="ls-card" style="margin-top:10px;">
+          <div class="ls-lbl">Panic / intrusive thoughts</div>
+          <div class="pill-row" id="lf-panic">
+            <button class="pill" data-val="Frequent" data-col="danger">Frequent</button>
+            <button class="pill" data-val="Brief"    data-col="warn">Brief</button>
+            <button class="pill" data-val="None"     data-col="good">None</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep">
+        <p class="eyebrow" style="margin-bottom:1rem;">Anything to note?</p>
+        <textarea id="ci-note" placeholder="Patterns you noticed, what's weighing on you, what's helping, things to raise with your therapist…" rows="4"></textarea>
+        <button class="submit-btn" id="submit-btn" onclick="submitCheckin()">Save check‑in</button>
+        <div class="status-line" id="submit-status"></div>
+      </div>
+
+    </div><!-- /form-wrap -->
+
+    <div id="success-wrap" style="display:none">
+      <div class="success">
+        <div class="success-mark">✓</div>
+        <h2>Check‑in saved</h2>
+        <p id="success-msg">Your responses have been recorded.</p>
+        <button class="ghost-btn" onclick="showPage('trends')">View trends →</button>
+      </div>
+    </div>
+  </div><!-- /checkin -->
+
+  <!-- ══ TRENDS ════════════════════════════════════════════════ -->
+  <div id="page-trends" class="page">
+    <div id="trends-empty" class="empty">No check‑ins yet.<br>Complete your first to see trends.</div>
+    <div id="trends-content" style="display:none">
+      <div id="alert-area" style="margin-bottom:1.5rem;"></div>
+      <p class="eyebrow">Wellbeing score <span style="color:var(--ink3);font-size:0.52rem;">(lower = better)</span></p>
+      <div class="metric-row" id="metric-row"></div>
+      <div class="chart-wrap"><canvas id="trendChart" role="img" aria-label="Monthly scores"></canvas></div>
+      <p class="eyebrow">History</p>
+      <div id="hist-list"></div>
+    </div>
+  </div>
+
+  <!-- ══ PILLARS ═══════════════════════════════════════════════ -->
+  <div id="page-pillars" class="page">
+    <div id="pillars-empty" class="empty">Complete a check‑in<br>to see your pillar breakdown.</div>
+    <div id="pillars-content" style="display:none">
+      <p class="eyebrow">Six pillars · most recent check‑in</p>
+      <div class="pillar-grid" id="pillar-grid"></div>
+      <div style="font-size:0.9rem;color:var(--ink2);line-height:1.8;font-weight:300;padding-top:1.5rem;border-top:1px solid var(--rule);">
+        Each pillar reflects an area your therapist identified as key to staying stable. A dip is a signal worth noticing — not an alarm. The goal is catching slow drift before it compounds.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SETTINGS ══════════════════════════════════════════════ -->
+  <div id="page-settings" class="page">
+    <p class="eyebrow">Notion sync</p>
+
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+      <div class="setting-lbl">Worker URL</div>
+      <div class="setting-sub">Your Cloudflare Worker endpoint</div>
+      <input class="url-input" id="worker-url" type="url" placeholder="https://htracker.richardpeevers.workers.dev" oninput="saveSettings()">
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-lbl">Sync to Notion</div>
+        <div class="setting-sub">Write each check‑in to your Personal Brain database</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="tog-notion" checked onchange="saveSettings()"><span class="tog-sl"></span></label>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-lbl">Test connection</div>
+        <div class="setting-sub">Verify the Worker is reachable</div>
+      </div>
+      <button class="ghost-btn" onclick="testConnection()">Test →</button>
+    </div>
+
+    <p class="eyebrow" style="margin-top:2rem;">Alerts</p>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-lbl">Drift alert</div>
+        <div class="setting-sub">Flag when score rises more than 30% above your personal best</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="tog-drift" checked onchange="saveSettings()"><span class="tog-sl"></span></label>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-lbl">Lifestyle alerts</div>
+        <div class="setting-sub">Flag when panic, sleep, or movement signals worsen</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="tog-ls" checked onchange="saveSettings()"><span class="tog-sl"></span></label>
+    </div>
+
+    <p class="eyebrow" style="margin-top:2rem;">Data</p>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-lbl">Export history</div>
+        <div class="setting-sub">Download JSON — share with your therapist or keep as backup</div>
+      </div>
+      <button class="ghost-btn" onclick="exportData()">Export →</button>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-lbl">Load sample data</div>
+        <div class="setting-sub">Populate with six months of example history</div>
+      </div>
+      <button class="ghost-btn" onclick="loadSample()">Load →</button>
+    </div>
+
+    <div class="setting-row" style="border:none">
+      <div class="setting-info">
+        <div class="setting-lbl" style="color:var(--danger)">Clear local data</div>
+        <div class="setting-sub">Removes local entries only — Notion records are unaffected</div>
+      </div>
+      <button class="ghost-btn" style="color:var(--danger);border-color:var(--danger)" onclick="clearData()">Clear →</button>
+    </div>
+
+    <div class="notice">
+      Data is stored in your browser's localStorage and, when sync is on,<br>
+      written to your Personal Brain Notion database.<br>
+      Nothing is sent to any other server.<br><br>
+      This is a personal tracking tool — not a clinical assessment.<br>
+      Always work with your therapist and psychiatrist on clinical decisions.
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── Config ───────────────────────────────────────────────────────────────
+const WORKER  = 'https://htracker.richardpeevers.workers.dev';
+const STORE   = 'mhtracker_v3';
+const CFGKEY  = 'mhtracker_cfg_v3';
+
+// ── State ─────────────────────────────────────────────────────────────────
+let db  = JSON.parse(localStorage.getItem(STORE)  || '{"entries":[]}');
+let cfg = JSON.parse(localStorage.getItem(CFGKEY) || '{}');
+if (!cfg.workerUrl)                cfg.workerUrl      = WORKER;
+if (cfg.notionEnabled === undefined) cfg.notionEnabled = true;
+if (cfg.driftAlert    === undefined) cfg.driftAlert    = true;
+if (cfg.lsAlert       === undefined) cfg.lsAlert       = true;
+
+const saveDb  = () => localStorage.setItem(STORE,  JSON.stringify(db));
+const saveCfg = () => localStorage.setItem(CFGKEY, JSON.stringify(cfg));
+
+// ── Answer state ─────────────────────────────────────────────────────────
+const ans = { q1:null, q2:null, q3:null, q4:null };
+const lf  = { cardio:null, strength:null, walks:null, sleep:null,
+               connection:null, escapism:null, work:null, nonwork:null, panic:null };
+
+// Scoring maps for lifestyle fields (good=2, warn=1, danger=0)
+const LF_SCORE = {
+  cardio:     {'None':0,'1-2x':1,'3+':2},
+  strength:   {'None':0,'1-2x':1,'3+':2},
+  walks:      {'Rarely':0,'Sometimes':1,'Most days':2},
+  sleep:      {'Poor':0,'Mixed':1,'Good':2},
+  connection: {'Low':0,'Some':1,'Good':2},
+  escapism:   {'Heavy':0,'Some':1,'None':2},
+  work:       {'High':0,'Elevated':1,'Managed':2},
+  nonwork:    {'High':0,'Elevated':1,'Managed':2},
+  panic:      {'Frequent':0,'Brief':1,'None':2},
+};
+
+// ── Nav ───────────────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  // match nav button by normalised text
+  document.querySelectorAll('nav button').forEach(b => {
+    if (b.textContent.replace(/[\u2011\-]/g,'-').toLowerCase().trim() === id) b.classList.add('active');
+  });
+  if (id === 'trends')   renderTrends();
+  if (id === 'pillars')  renderPillars();
+  if (id === 'settings') applySettings();
+}
+
+// ── Scale buttons ─────────────────────────────────────────────────────────
+function makeScale(id) {
+  const el = document.getElementById(id);
+  ['0','1','2','3'].forEach(v => {
+    const b = document.createElement('button');
+    b.className = 'scale-btn'; b.textContent = v;
+    b.onclick = () => {
+      el.querySelectorAll('.scale-btn').forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel'); ans[id] = +v;
+    };
+    el.appendChild(b);
+  });
+}
+
+// ── Pill buttons ──────────────────────────────────────────────────────────
+function makePills(containerId, key) {
+  document.getElementById(containerId).querySelectorAll('.pill').forEach(p => {
+    p.onclick = () => {
+      document.getElementById(containerId).querySelectorAll('.pill')
+        .forEach(x => x.classList.remove('sel-good','sel-warn','sel-danger'));
+      p.classList.add('sel-' + p.dataset.col);
+      lf[key] = p.dataset.val;
+    };
+  });
+}
+
+// ── Submit ────────────────────────────────────────────────────────────────
+async function submitCheckin() {
+  if (Object.values(ans).some(v => v === null) || Object.values(lf).some(v => v === null)) {
+    alert('Please answer all questions before saving.');
+    return;
+  }
+
+  const btn    = document.getElementById('submit-btn');
+  const status = document.getElementById('submit-status');
+  btn.disabled = true; btn.textContent = 'Saving…'; status.textContent = '';
+
+  const now     = new Date();
+  const dateStr = now.toISOString().slice(0,10);
+  const mhScore = ans.q1 + ans.q2 + ans.q3 + ans.q4;
+  const lsScore = Object.entries(lf).reduce((s,[k,v]) => s + (LF_SCORE[k]?.[v] ?? 1), 0);
+
+  const entry = {
+    date: now.toISOString(), dateStr, name: dateStr,
+    answers: {...ans}, lifestyle: {...lf},
+    mhScore, lsScore,
+    note: document.getElementById('ci-note').value.trim(),
+    synced: false,
+  };
+
+  db.entries.push(entry); saveDb();
+
+  // Notion sync
+  let notionOk = false;
+  const wUrl = cfg.workerUrl || WORKER;
+  if (cfg.notionEnabled && wUrl) {
+    status.textContent = 'Syncing to Notion…';
+    try {
+      const res = await fetch(wUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: dateStr, date: dateStr, mhScore, lsScore,
+          q1: ans.q1, q2: ans.q2, q3: ans.q3, q4: ans.q4,
+          cardio:     lf.cardio,     strength: lf.strength,
+          walks:      lf.walks,      sleep:    lf.sleep,
+          connection: lf.connection, escapism: lf.escapism,
+          work:       lf.work,       nonwork:  lf.nonwork,
+          panic:      lf.panic,      note:     entry.note,
+        }),
+      });
+      if (res.ok) { db.entries[db.entries.length-1].synced = true; saveDb(); notionOk = true; }
+    } catch(e) { console.warn('Notion sync failed:', e); }
+  }
+
+  document.getElementById('form-wrap').style.display = 'none';
+  document.getElementById('success-wrap').style.display = 'block';
+  document.getElementById('success-msg').textContent = cfg.notionEnabled && wUrl
+    ? (notionOk ? 'Saved locally and synced to your Personal Brain.' : 'Saved locally. Notion sync failed — check your Worker URL in Settings.')
+    : 'Saved locally. Enable Notion sync in Settings to write to your Personal Brain.';
+
+  btn.disabled = false; btn.textContent = 'Save check‑in';
+}
+
+// ── Trends ────────────────────────────────────────────────────────────────
+let chart = null;
+function renderTrends() {
+  const E = db.entries;
+  if (!E.length) {
+    document.getElementById('trends-empty').style.display = 'block';
+    document.getElementById('trends-content').style.display = 'none';
+    return;
+  }
+  document.getElementById('trends-empty').style.display = 'none';
+  document.getElementById('trends-content').style.display = 'block';
+
+  const latest = E[E.length-1], prev = E.length > 1 ? E[E.length-2] : null;
+  const best   = Math.min(...E.map(e => e.mhScore));
+  const avg    = +(E.reduce((a,e) => a+e.mhScore, 0) / E.length).toFixed(1);
+  const trend  = !prev ? '—'
+    : latest.mhScore < prev.mhScore ? '↓ better'
+    : latest.mhScore > prev.mhScore ? '↑ watch'
+    : '→ stable';
+
+  document.getElementById('metric-row').innerHTML = `
+    <div class="metric"><div class="metric-val">${latest.mhScore}<sup>/12</sup></div><div class="metric-lbl">Latest</div></div>
+    <div class="metric"><div class="metric-val">${avg}<sup>/12</sup></div><div class="metric-lbl">Average</div></div>
+    <div class="metric"><div class="metric-val" style="font-size:1.1rem">${trend}</div><div class="metric-lbl">Trend</div></div>`;
+
+  const alerts = [];
+  if (cfg.driftAlert && E.length >= 2 && latest.mhScore > best * 1.3 && latest.mhScore > 4)
+    alerts.push({c:'alert-warn', t:'Score is drifting above your personal best. Worth raising with your therapist.'});
+  if (cfg.driftAlert && prev && latest.mhScore > prev.mhScore + 3)
+    alerts.push({c:'alert-warn', t:'Meaningful increase since last check-in. Slow drift is how it starts — catch it early.'});
+  if (cfg.lsAlert && latest.lifestyle.panic === 'Frequent')
+    alerts.push({c:'alert-danger', t:'Panic / intrusive thoughts logged as frequent. Bring this to your therapist.'});
+  if (cfg.lsAlert && latest.lifestyle.cardio === 'None' && latest.lifestyle.walks === 'Rarely')
+    alerts.push({c:'alert-muted', t:'No cardio or walks this week. Movement has a direct effect on anxiety — worth prioritising.'});
+  if (cfg.lsAlert && latest.lifestyle.sleep === 'Poor')
+    alerts.push({c:'alert-muted', t:'Sleep quality logged as poor. Sleep and mood are tightly coupled.'});
+
+  document.getElementById('alert-area').innerHTML = alerts.length
+    ? alerts.map(a => `<div class="alert ${a.c}">${a.t}</div>`).join('')
+    : '<div class="alert alert-good">No drift signals detected — things look stable.</div>';
+
+  const labels = E.map(e => new Date(e.date).toLocaleDateString('en-GB',{month:'short',day:'numeric'}));
+  const scores = E.map(e => e.mhScore);
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: { labels, datasets:[{ data:scores, borderColor:'#7eb89a', backgroundColor:'rgba(126,184,154,0.07)', fill:true, tension:0.35, pointRadius:4, pointBackgroundColor:'#7eb89a', borderWidth:1.5 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales: {
+        y:{ min:0, max:12, grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#5a5650', stepSize:3, callback:v=>v===0?'Best':v===12?'Worst':v} },
+        x:{ grid:{display:false}, ticks:{color:'#5a5650', maxRotation:0} }
+      }
+    }
+  });
+
+  document.getElementById('hist-list').innerHTML = [...E].reverse().map(e => {
+    const d   = new Date(e.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    const cls = e.mhScore <= 4 ? 'c-good' : e.mhScore <= 8 ? 'c-warn' : 'c-bad';
+    const syn = e.synced ? '<span class="hist-notion">● notion</span>' : '';
+    return `<div class="hist-row">
+      <span class="hist-date">${d}</span>
+      ${e.note ? `<span class="hist-note">${e.note}</span>` : '<span class="hist-note"></span>'}
+      <span class="hist-right"><span class="hist-score ${cls}">${e.mhScore}/12</span>${syn}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Pillars ───────────────────────────────────────────────────────────────
+function renderPillars() {
+  const E = db.entries;
+  if (!E.length) {
+    document.getElementById('pillars-empty').style.display = 'block';
+    document.getElementById('pillars-content').style.display = 'none';
+    return;
+  }
+  document.getElementById('pillars-empty').style.display = 'none';
+  document.getElementById('pillars-content').style.display = 'block';
+
+  const e = E[E.length-1];
+  const ls = k => LF_SCORE[k]?.[e.lifestyle[k]] ?? 1;
+
+  const pillars = [
+    { name:'Mood',           val:(3-e.answers.q1)+(3-e.answers.q2),  max:6, col:'#7eb89a' },
+    { name:'Anxiety',        val:(3-e.answers.q3)+(3-e.answers.q4),  max:6, col:'#6fa8dc' },
+    { name:'Movement',       val:ls('cardio')+ls('strength')+ls('walks'), max:6, col:'#81c99e' },
+    { name:'Sleep',          val:ls('sleep'),                          max:2, col:'#9b8ec4' },
+    { name:'Connection',     val:ls('connection'),                     max:2, col:'#c97ba8' },
+    { name:'Stress balance', val:ls('work')+ls('nonwork')+(2-ls('panic')), max:6, col:'#c9974a' },
+  ];
+
+  document.getElementById('pillar-grid').innerHTML = pillars.map(p => {
+    const pct = Math.round(Math.min(p.val/p.max*100, 100));
+    const lbl = pct >= 70 ? 'Good' : pct >= 40 ? 'Monitor' : 'Attention';
+    return `<div class="pillar">
+      <div class="pillar-name">${p.name}</div>
+      <div class="bar-bg"><div class="bar-fg" style="width:${pct}%;background:${p.col}"></div></div>
+      <div class="pillar-label">${lbl} · ${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────
+function applySettings() {
+  document.getElementById('worker-url').value   = cfg.workerUrl || '';
+  document.getElementById('tog-notion').checked = cfg.notionEnabled;
+  document.getElementById('tog-drift').checked  = cfg.driftAlert;
+  document.getElementById('tog-ls').checked     = cfg.lsAlert;
+}
+function saveSettings() {
+  cfg.workerUrl     = document.getElementById('worker-url').value.trim() || WORKER;
+  cfg.notionEnabled = document.getElementById('tog-notion').checked;
+  cfg.driftAlert    = document.getElementById('tog-drift').checked;
+  cfg.lsAlert       = document.getElementById('tog-ls').checked;
+  saveCfg();
+}
+async function testConnection() {
+  const url = cfg.workerUrl || WORKER;
+  try {
+    const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({_test:true}) });
+    alert(res.ok ? '✓ Connected — Worker is reachable.' : `✗ Worker returned ${res.status}. Check your token and database ID.`);
+  } catch { alert('✗ Could not reach Worker. Check the URL and that the Worker is deployed.'); }
+}
+
+// ── Export / Sample / Clear ───────────────────────────────────────────────
+function exportData() {
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'})),
+    download: `mh-checkins-${new Date().toISOString().slice(0,10)}.json`
+  }); a.click();
+}
+
+function loadSample() {
+  if (!confirm('Load six months of sample data? This replaces existing local entries.')) return;
+  const now = new Date();
+  db.entries = [5,4,3,2,1,0].map((mo,i) => {
+    const d = new Date(now); d.setMonth(d.getMonth()-mo);
+    const ds = d.toISOString().slice(0,10);
+    const q  = i<2?[2,2,2,2]:i<4?[1,1,1,1]:[0,0,0,0];
+    return {
+      date:d.toISOString(), dateStr:ds, name:ds,
+      answers:{q1:q[0],q2:q[1],q3:q[2],q4:q[3]},
+      lifestyle:{
+        cardio:     i<2?'None':i<4?'1-2x':'3+',
+        strength:   i<2?'None':i<4?'1-2x':'3+',
+        walks:      i<3?'Rarely':i<4?'Sometimes':'Most days',
+        sleep:      i<2?'Poor':i<4?'Mixed':'Good',
+        connection: i<3?'Low':'Good',
+        escapism:   i<2?'Heavy':i<4?'Some':'None',
+        work:       i<3?'High':i<4?'Elevated':'Managed',
+        nonwork:    i<2?'High':i<4?'Elevated':'Managed',
+        panic:      i<2?'Frequent':i<4?'Brief':'None',
+      },
+      mhScore:q.reduce((a,b)=>a+b,0), lsScore:0,
+      note:i===5?'Feeling noticeably better. Less avoidance, more present.':i===1?'Rough month — work overload, not sleeping.':'',
+      synced:false,
+    };
+  });
+  saveDb(); showPage('trends');
+}
+
+function clearData() {
+  if (!confirm('Clear all local check-in data? Notion records are not affected.')) return;
+  db = {entries:[]}; saveDb();
+  Object.keys(ans).forEach(k=>ans[k]=null);
+  Object.keys(lf).forEach(k=>lf[k]=null);
+  document.querySelectorAll('.scale-btn').forEach(b=>b.classList.remove('sel'));
+  document.querySelectorAll('.pill').forEach(b=>b.classList.remove('sel-good','sel-warn','sel-danger'));
+  document.getElementById('ci-note').value='';
+  document.getElementById('form-wrap').style.display='block';
+  document.getElementById('success-wrap').style.display='none';
+  showPage('checkin');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+document.getElementById('ci-date').textContent =
+  new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+['q1','q2','q3','q4'].forEach(makeScale);
+makePills('lf-cardio',     'cardio');
+makePills('lf-strength',   'strength');
+makePills('lf-walks',      'walks');
+makePills('lf-sleep',      'sleep');
+makePills('lf-connection', 'connection');
+makePills('lf-escapism',   'escapism');
+makePills('lf-work',       'work');
+makePills('lf-nonwork',    'nonwork');
+makePills('lf-panic',      'panic');
+</script>
+</body>
+</html>
