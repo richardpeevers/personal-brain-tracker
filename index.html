@@ -355,6 +355,12 @@ textarea::placeholder { color:var(--ink3); font-style:italic; }
       <input class="url-input" id="worker-url" type="url" placeholder="https://htracker.richardpeevers.workers.dev" oninput="saveSettings()">
     </div>
 
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+      <div class="setting-lbl">Access token</div>
+      <div class="setting-sub">Saved on this device only, never in the page's code</div>
+      <input class="url-input" id="worker-token" type="password" autocomplete="off" placeholder="Paste your check-in token" oninput="saveSettings()">
+    </div>
+
     <div class="setting-row">
       <div class="setting-info">
         <div class="setting-lbl">Sync to Notion</div>
@@ -544,7 +550,7 @@ async function submitCheckin() {
     try {
       const res = await fetch(wUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({
           name: dateStr, date: dateStr, mhScore, lsScore,
           q1: ans.q1, q2: ans.q2, q3: ans.q3, q4: ans.q4,
@@ -672,21 +678,28 @@ function renderPillars() {
 // ── Settings ──────────────────────────────────────────────────────────────
 function applySettings() {
   document.getElementById('worker-url').value   = cfg.workerUrl || '';
+  document.getElementById('worker-token').value = cfg.workerToken || '';
   document.getElementById('tog-notion').checked = cfg.notionEnabled;
   document.getElementById('tog-drift').checked  = cfg.driftAlert;
   document.getElementById('tog-ls').checked     = cfg.lsAlert;
 }
 function saveSettings() {
   cfg.workerUrl     = document.getElementById('worker-url').value.trim() || WORKER;
+  cfg.workerToken   = document.getElementById('worker-token').value.trim();
   cfg.notionEnabled = document.getElementById('tog-notion').checked;
   cfg.driftAlert    = document.getElementById('tog-drift').checked;
   cfg.lsAlert       = document.getElementById('tog-ls').checked;
   saveCfg();
 }
+function authHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  if (cfg.workerToken) h['X-Health-Token'] = cfg.workerToken;
+  return h;
+}
 async function testConnection() {
   const url = cfg.workerUrl || WORKER;
   try {
-    const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({_test:true}) });
+    const res = await fetch(url, { method:'POST', headers:authHeaders(), body:JSON.stringify({_test:true}) });
     alert(res.ok ? '✓ Connected — Worker is reachable.' : `✗ Worker returned ${res.status}. Check your token and database ID.`);
   } catch { alert('✗ Could not reach Worker. Check the URL and that the Worker is deployed.'); }
 }
